@@ -3,20 +3,56 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "ItemInterface.h"
+#include "DataAssets/ItemDA.h"
 #include "GameFramework/Actor.h"
+#include "GameFramework/ProjectileMovementComponent.h"
 #include "BaseItem.generated.h"
 
+class ATestGameStateBase;
+
 UCLASS()
-class TESTPROJECT_API ABaseItem : public AActor, public IItemInterface
+class TESTPROJECT_API ABaseItem : public AActor
 {
 	GENERATED_BODY()
-	
-public:	
+
+public:
 	// Sets default values for this actor's properties
 	ABaseItem();
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	UStaticMeshComponent* Item;
 	
-	virtual float GetItemGravity_Implementation() override;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	UProjectileMovementComponent* ProjectileMovement;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, ReplicatedUsing=OnRep_ItemDA, meta=(ExposeOnSpawn=true))
+	UItemDA* ItemDA;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	FVector EstimatedLandingLocation;
+	
+	UFUNCTION(BlueprintCallable)
+	void ResetOnGameState(AActor* Actor);
+	
+	UFUNCTION(BlueprintCallable)
+	void ItemBeginOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp,
+	                        int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
+
+	UFUNCTION(BlueprintCallable)
+	void OnItemHitObsticle(const FHitResult& ImpactResult);
+
+	UFUNCTION(BlueprintCallable)
+	void OnRep_ItemDA();
+
+	ATestGameStateBase* GameState;
+	
+	void SetItemStaticMesh() const;
+
+	void UpdateItemPosition() const;
+	
+	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+	
+	virtual void OnConstruction(const FTransform& Transform) override;
 
 protected:
 	// Called when the game starts or when spawned

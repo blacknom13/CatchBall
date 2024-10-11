@@ -3,7 +3,6 @@
 
 #include "TestGameStateBase.h"
 
-#include "ItemInterface.h"
 #include "NavigationPath.h"
 #include "NavigationSystem.h"
 #include "SimpleFunctionLibrary.h"
@@ -26,7 +25,6 @@ void ATestGameStateBase::OnRep_GameFinished()
 	if (HasAuthority())
 	{
 		SetWinner();
-		DestroyAllSessions();
 	}
 	OnGameFinished.Broadcast();
 }
@@ -37,7 +35,7 @@ void ATestGameStateBase::SetWinner()
 	TArray<int32> Scores;
 	TArray<int32> TopScorers;
 	int32 MaxScore;
-	Execute_GetAI_Info(this, Names, Scores);
+	GetAI_Info(Names, Scores);
 	TopScorers = USimpleFunctionLibrary::FindTopScoreIndeces(Scores, MaxScore);
 	if (TopScorers.Num() > 1)
 	{
@@ -46,7 +44,7 @@ void ATestGameStateBase::SetWinner()
 	}
 	else
 	{
-		WinnerName = Names[0];
+		WinnerName = Names[TopScorers[0]];
 		WinnerScore = MaxScore;
 	}
 }
@@ -57,14 +55,11 @@ void ATestGameStateBase::CalculateAI_CurrentPathCosts()
 	NPC_ToPathCost.Empty();
 	if (PlayItem)
 	{
-		if (PlayItem->Implements<UItemInterface>())
-		{
-			CurrentEtimatedLandingLocation = IItemInterface::Execute_GetEstimatedLandingLocation(PlayItem);
-		}
+		CurrentEtimatedLandingLocation = PlayItem->EstimatedLandingLocation;
 		for (auto NPC : NPCs)
 		{
 			auto NavPath = UNavigationSystemV1::FindPathToLocationSynchronously(this, NPC->GetActorLocation(),
-																				CurrentEtimatedLandingLocation, NPC);
+				CurrentEtimatedLandingLocation, NPC);
 			float PathTime = NavPath->GetPathLength() / NPC->GetMovementComponent()->GetMaxSpeed();
 			NPC_ToPathCost.Add(NPC, PathTime);
 		}
@@ -91,7 +86,59 @@ void ATestGameStateBase::FindCurrentMaxPathCost()
 	MaxPathCost = NPCs.Num() != NumOfMaxCostIndeces ? MaxCost : MaxCost + 20;
 }
 
-void ATestGameStateBase::GetAI_Info_Implementation(TArray<FName>& Names, TArray<int32>& Scores)
+void ATestGameStateBase::ItemLocationChanged()
 {
-	IGameStateInterface::GetAI_Info_Implementation(Names, Scores);
+	OnItemLocationChanged.Broadcast(PlayItem->GetActorLocation());
+}
+
+void ATestGameStateBase::SetItemInGame(ABaseItem* Item)
+{
+	PlayItem=Item;
+	if (PlayItem)
+	{
+		CalculateAI_CurrentPathCosts();
+		FindCurrentMaxPathCost();
+	}
+	OnItemInGame.Broadcast(PlayItem);
+}
+
+void ATestGameStateBase::UpdateRemainingTime(const float Time)
+{
+	RemainingTime=Time;
+}
+
+void ATestGameStateBase::AddAI_Character(AAIController* Controller)
+{
+	NPCs.AddUnique(Cast<ABaseAICharacter>(Controller->GetPawn()));
+}
+
+void ATestGameStateBase::ResetAI_NamePool(TMap<FName, EGender> NamePool)
+{
+	CurrentNamePool=NamePool;
+}
+
+void ATestGameStateBase::SetGameFinished(bool bFinished)
+{
+	bGameFinshed=bFinished;
+	OnRep_GameFinished();
+}
+
+void ATestGameStateBase::GetAI_InitInfo(FName& Name, EGender& Gender)
+{
+	int32 Index=FMath::RandRange(0,CurrentNamePool.Num()-1);
+	TArray<FName> Keys;
+	CurrentNamePool.GetKeys(Keys);
+	Name=Keys[Index];
+	CurrentNamePool.RemoveAndCopyValue(Name,Gender);
+}
+
+void ATestGameStateBase::GetAI_Info(TArray<FName>& Names, TArray<int32>& Scores)
+{
+	Names.Empty();
+	Scores.Empty();
+	for (auto NPC : NPCs)
+	{
+		Names.Add(NPC->Name);
+		Scores.Add(NPC->Score);
+	}
 }

@@ -3,8 +3,6 @@
 
 #include "SimpleFunctionLibrary.h"
 
-#include "ItemInterface.h"
-
 TArray<int32> USimpleFunctionLibrary::FindTopScoreIndeces(TArray<int32> Scores, int32& MaxScore)
 {
 	TArray<int32> TopScorers;
@@ -25,16 +23,12 @@ TArray<int32> USimpleFunctionLibrary::FindTopScoreIndeces(TArray<int32> Scores, 
 	return TopScorers;
 }
 
-FVector USimpleFunctionLibrary::CalculateItemLandingLocation(AActor* Item)
+FVector USimpleFunctionLibrary::CalculateItemLandingLocation(ABaseItem* Item)
 {
 	// Solve simple mechanical movement problem
 	FVector Velocity=Item->GetVelocity();
 	FVector VelocityXY=FVector(Velocity.X,Velocity.Y,0);
-	float Gravity = -980;
-	if (Item->Implements<UItemInterface>())
-	{
-		Gravity = IItemInterface::Execute_GetItemGravity(Item);
-	}
+	float Gravity = Item->ProjectileMovement->GetGravityZ();
 
 	float A = .5 * Gravity;
 	float B = -Velocity.Z;

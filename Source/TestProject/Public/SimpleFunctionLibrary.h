@@ -3,6 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "BaseItem.h"
 #include "Kismet/BlueprintFunctionLibrary.h"
 #include "SimpleFunctionLibrary.generated.h"
 
@@ -19,5 +20,5 @@ public:
 	static UPARAM(DisplayName="TopScorers") TArray<int32> FindTopScoreIndeces (TArray<int32> Scores, int32& MaxScore);
 
 	UFUNCTION(BlueprintCallable, Category="Physics")
-	static UPARAM(DisplayName="LandingLocation") FVector CalculateItemLandingLocation (AActor* Item);
+	static UPARAM(DisplayName="LandingLocation") FVector CalculateItemLandingLocation (ABaseItem* Item);
 };
