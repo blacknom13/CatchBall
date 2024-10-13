@@ -32,10 +32,3 @@ void ABaseAICharacter::BeginPlay()
 	Super::BeginPlay();
 
 }
-
-// Called every frame
-void ABaseAICharacter::Tick(float DeltaTime)
-{
-	Super::Tick(DeltaTime);
-
-}

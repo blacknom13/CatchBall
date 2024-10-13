@@ -85,6 +85,12 @@ public:
 	UFUNCTION(BlueprintCallable)
 	UPARAM(DisplayName="InGame") bool IsItemInGame() { return IsValid(PlayItem); }
 
+	UFUNCTION(BlueprintCallable, Category="Search")
+	UPARAM(DisplayName="TopScorers") TArray<int32> FindTopScoreIndeces(TArray<int32> Scores, int32& MaxScore);
+
+	UFUNCTION(BlueprintCallable)
+	void GetAI_Info(TArray<FName>& Names, TArray<int32>& Scores);
+
 	UFUNCTION(BlueprintCallable)
 	void GetWinnerInfo(FName& Name, int32& Score)
 	{
@@ -119,10 +125,9 @@ public:
 	FOneActorParam OnItemInGame;
 
 	UPROPERTY(BlueprintCallable, BlueprintAssignable, Category="GameState")
-	FOneVectorParam OnItemLocationChanged;
+	FOneActorParam OnItemLocationChanged;
 
-	UFUNCTION(BlueprintCallable)
-	void GetAI_Info(TArray<FName>& Names, TArray<int32>& Scores);
+
 
 private:
 	UPROPERTY(BlueprintGetter=GetRemainingTime, BlueprintSetter=UpdateRemainingTime, Replicated, Category="Game")

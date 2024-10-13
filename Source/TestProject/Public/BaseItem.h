@@ -28,8 +28,11 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, ReplicatedUsing=OnRep_ItemDA, meta=(ExposeOnSpawn=true))
 	UItemDA* ItemDA;
 	
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	FVector EstimatedLandingLocation;
+	UPROPERTY(BlueprintGetter=GetEstimatedNextLocation)
+	FVector EstimatedNextLocation;
+
+	UFUNCTION(BlueprintCallable, BlueprintPure)
+	FVector GetEstimatedNextLocation(){return EstimatedNextLocation;}
 	
 	UFUNCTION(BlueprintCallable)
 	void ResetOnGameState(AActor* Actor);
@@ -37,18 +40,24 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void ItemBeginOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp,
 	                        int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
-
-	UFUNCTION(BlueprintCallable)
-	void OnItemHitObsticle(const FHitResult& ImpactResult);
-
+	
+	UFUNCTION(Blueprintable)
+	void ProjectileMovementEnded(const FHitResult& Hit);
+	
 	UFUNCTION(BlueprintCallable)
 	void OnRep_ItemDA();
+	
+	FVector CalculateNextItemLocation() const;
+	
+	FVector CalculateItemLandingLocation() const;
 
 	ATestGameStateBase* GameState;
+
+	FHitResult CurrentHit;
 	
 	void SetItemStaticMesh() const;
 
-	void UpdateItemPosition() const;
+	void UpdateItemPosition();
 	
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 	

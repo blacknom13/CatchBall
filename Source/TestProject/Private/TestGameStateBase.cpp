@@ -5,7 +5,6 @@
 
 #include "NavigationPath.h"
 #include "NavigationSystem.h"
-#include "SimpleFunctionLibrary.h"
 #include "GameFramework/PawnMovementComponent.h"
 #include "Net/UnrealNetwork.h"
 
@@ -36,7 +35,7 @@ void ATestGameStateBase::SetWinner()
 	TArray<int32> TopScorers;
 	int32 MaxScore;
 	GetAI_Info(Names, Scores);
-	TopScorers = USimpleFunctionLibrary::FindTopScoreIndeces(Scores, MaxScore);
+	TopScorers = FindTopScoreIndeces(Scores, MaxScore);
 	if (TopScorers.Num() > 1)
 	{
 		WinnerName = "Draw";
@@ -55,7 +54,7 @@ void ATestGameStateBase::CalculateAI_CurrentPathCosts()
 	NPC_ToPathCost.Empty();
 	if (PlayItem)
 	{
-		CurrentEtimatedLandingLocation = PlayItem->EstimatedLandingLocation;
+		CurrentEtimatedLandingLocation = PlayItem->EstimatedNextLocation;
 		for (auto NPC : NPCs)
 		{
 			auto NavPath = UNavigationSystemV1::FindPathToLocationSynchronously(this, NPC->GetActorLocation(),
@@ -88,23 +87,26 @@ void ATestGameStateBase::FindCurrentMaxPathCost()
 
 void ATestGameStateBase::ItemLocationChanged()
 {
-	OnItemLocationChanged.Broadcast(PlayItem->GetActorLocation());
+	OnItemLocationChanged.Broadcast(PlayItem);
+	CalculateAI_CurrentPathCosts();
+	FindCurrentMaxPathCost();
 }
 
 void ATestGameStateBase::SetItemInGame(ABaseItem* Item)
 {
-	PlayItem=Item;
+	PlayItem = Item;
 	if (PlayItem)
 	{
 		CalculateAI_CurrentPathCosts();
 		FindCurrentMaxPathCost();
 	}
 	OnItemInGame.Broadcast(PlayItem);
+	OnItemLocationChanged.Broadcast(PlayItem);
 }
 
 void ATestGameStateBase::UpdateRemainingTime(const float Time)
 {
-	RemainingTime=Time;
+	RemainingTime = Time;
 }
 
 void ATestGameStateBase::AddAI_Character(AAIController* Controller)
@@ -114,22 +116,42 @@ void ATestGameStateBase::AddAI_Character(AAIController* Controller)
 
 void ATestGameStateBase::ResetAI_NamePool(TMap<FName, EGender> NamePool)
 {
-	CurrentNamePool=NamePool;
+	CurrentNamePool = NamePool;
 }
 
 void ATestGameStateBase::SetGameFinished(bool bFinished)
 {
-	bGameFinshed=bFinished;
+	bGameFinshed = bFinished;
 	OnRep_GameFinished();
 }
 
 void ATestGameStateBase::GetAI_InitInfo(FName& Name, EGender& Gender)
 {
-	int32 Index=FMath::RandRange(0,CurrentNamePool.Num()-1);
+	int32 Index = FMath::RandRange(0, CurrentNamePool.Num() - 1);
 	TArray<FName> Keys;
 	CurrentNamePool.GetKeys(Keys);
-	Name=Keys[Index];
-	CurrentNamePool.RemoveAndCopyValue(Name,Gender);
+	Name = Keys[Index];
+	CurrentNamePool.RemoveAndCopyValue(Name, Gender);
+}
+
+TArray<int32> ATestGameStateBase::FindTopScoreIndeces(TArray<int32> Scores, int32& MaxScore)
+{
+	TArray<int32> TopScorers;
+	MaxScore = 0;
+	for (int i = 0; i < Scores.Num(); i++)
+	{
+		if (MaxScore == Scores[i])
+		{
+			TopScorers.Add(i);
+		}
+		else if (MaxScore < Scores[i])
+		{
+			TopScorers.Empty();
+			MaxScore = Scores[i];
+			TopScorers.Add(i);
+		}
+	}
+	return TopScorers;
 }
 
 void ATestGameStateBase::GetAI_Info(TArray<FName>& Names, TArray<int32>& Scores)
